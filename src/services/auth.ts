@@ -1,6 +1,6 @@
 import { randomBytes, scrypt } from "node:crypto";
 import { promisify } from "node:util";
-import { findUserByEmail, createUser } from "./user.js";
+import { findUserByUsername, createUser, findUserByNickname } from "./user.js";
 
 const scryptAsync = promisify(scrypt);
 
@@ -20,11 +20,18 @@ async function hashPassword(password: string): Promise<string> {
   return `${salt}:${derived.toString("hex")}`;
 }
 
-export async function register(input: { email: string; password: string }) {
-  const email = input.email.trim().toLowerCase();
+export async function register(input: {
+  name: string;
+  nickname: string;
+  username: string;
+  password: string;
+}) {
+  const name = input.name.trim();
+  const nickname = input.nickname.trim();
+  const username = input.username.trim().toLowerCase();
   const password = input.password;
 
-  if (!email || !password) {
+  if (!name || !nickname || !username || !password) {
     throw new AuthError("이메일과 비밀번호를 입력하세요", 400);
   }
 
@@ -32,14 +39,25 @@ export async function register(input: { email: string; password: string }) {
     throw new AuthError("비밀번호는 8자 이상이어야 합니다", 400);
   }
 
-  if (findUserByEmail(email)) {
+  if (await findUserByUsername(username)) {
     throw new AuthError("이미 가입된 이메일입니다", 409);
   }
 
-  const user = createUser({
-    email,
+  if (await findUserByNickname(nickname)) {
+    throw new AuthError("이미 가입된 닉네임입니다", 409);
+  }
+
+  const user = await createUser({
+    name: name,
+    nickname: nickname,
+    username: username,
     passwordHash: await hashPassword(password),
   });
 
-  return { id: user.id, email: user.email };
+  return {
+    id: user.id,
+    name: user.name,
+    nickname: user.nickname,
+    username: user.username,
+  };
 }

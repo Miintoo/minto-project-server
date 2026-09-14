@@ -6,7 +6,12 @@ export const authRouter = Router();
 authRouter.post("/register", async (req, res) => {
   try {
     const user = await register(
-      req.body as { email: string; password: string },
+      req.body as {
+        name: string;
+        nickname: string;
+        username: string;
+        password: string;
+      },
     );
 
     res.status(201).json(user);
