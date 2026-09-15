@@ -1,6 +1,7 @@
-import { randomBytes, scrypt } from "node:crypto";
+import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { findUserByUsername, createUser, findUserByNickname } from "./user.js";
+import { createSession } from "./session.js";
 
 const scryptAsync = promisify(scrypt);
 
@@ -59,5 +60,63 @@ export async function register(input: {
     name: user.name,
     nickname: user.nickname,
     username: user.username,
+  };
+}
+
+async function verifyPassword(
+  password: string,
+  passwordHash: string,
+): Promise<boolean> {
+  const [salt, storedHex] = passwordHash.split(":");
+
+  if (!salt || !storedHex) {
+    return false;
+  }
+
+  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
+  const stored = Buffer.from(storedHex, "hex");
+
+  if (derived.length !== stored.length) {
+    return false;
+  }
+
+  return timingSafeEqual(derived, stored);
+}
+
+function toPublicUser(user: {
+  id: string;
+  name: string;
+  nickname: string;
+  username: string;
+}) {
+  return {
+    id: user.id,
+    name: user.name,
+    nickname: user.nickname,
+    username: user.username,
+  };
+}
+
+export async function login(input: { username: string; password: string }) {
+  const username = input.username.trim().toLowerCase();
+  const password = input.password;
+
+  if (!username || !password) {
+    throw new AuthError("이메일과 비밀번호를 입력하세요", 400);
+  }
+
+  const user = await findUserByUsername(username);
+  const ok = user ? await verifyPassword(password, user.passwordHash) : false;
+
+  if (!user || !ok) {
+    throw new AuthError("아이디 또는 비밀번호가 올바르지 않습니다", 401);
+  }
+
+  const session = await createSession(user.id);
+
+  return {
+    user: toPublicUser(user),
+    sessionId: session.id,
+    expiresAt: session.expiresAt,
   };
 }
