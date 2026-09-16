@@ -26,3 +26,7 @@ export async function createSession(userId: string): Promise<Session> {
     expiresAt: rows[0].expires_at,
   };
 }
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  await pool.query(`DELETE FROM sessions WHERE id = $1`, [sessionId]);
+}

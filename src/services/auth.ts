@@ -1,7 +1,7 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { findUserByUsername, createUser, findUserByNickname } from "./user.js";
-import { createSession } from "./session.js";
+import { createSession, deleteSession } from "./session.js";
 
 const scryptAsync = promisify(scrypt);
 
@@ -119,4 +119,12 @@ export async function login(input: { username: string; password: string }) {
     sessionId: session.id,
     expiresAt: session.expiresAt,
   };
+}
+
+export async function logout(sessionId: string): Promise<void> {
+  if (!sessionId) {
+    return;
+  }
+
+  await deleteSession(sessionId);
 }

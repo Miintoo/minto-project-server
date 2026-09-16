@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { AuthError, register } from "../services/auth.js";
-import { login } from "../services/auth.js";
+import { login, logout } from "../services/auth.js";
 
 export const authRouter = Router();
 
@@ -57,14 +57,14 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
-// authRouter.post("/logout", async (req, res) => {
-//   try {
-//     const sessionId = req.cookies?.["session_id"];
-//     await logout(sessionId);
+authRouter.post("/logout", async (req, res) => {
+  try {
+    const sessionId = req.cookies?.["session_id"];
+    await logout(sessionId);
 
-//     res.clearCookie("session_id", sessionCookieOptions());
-//     res.status(204).send();
-//   } catch (error) {
-//     res.status(500).json({ message: "서버 오류로 로그아웃에 실패했습니다." });
-//   }
-// });
+    res.clearCookie("session_id", sessionCookieOptions());
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ message: "서버 오류로 로그아웃에 실패했습니다." });
+  }
+});
