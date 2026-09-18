@@ -30,3 +30,20 @@ export async function createSession(userId: string): Promise<Session> {
 export async function deleteSession(sessionId: string): Promise<void> {
   await pool.query(`DELETE FROM sessions WHERE id = $1`, [sessionId]);
 }
+
+export async function getSession(
+  sessionId: string,
+): Promise<Session | undefined> {
+  const { rows } = await pool.query(
+    `SELECT id, user_id, expires_at FROM sessions WHERE id = $1`,
+    [sessionId],
+  );
+
+  return rows[0]
+    ? {
+        id: rows[0].id,
+        userId: rows[0].user_id,
+        expiresAt: rows[0].expires_at,
+      }
+    : undefined;
+}

@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { AuthError, register } from "../services/auth.js";
 import { login, logout } from "../services/auth.js";
+import { getSession } from "../services/session.js";
+import { findUserById } from "../services/user.js";
 
 export const authRouter = Router();
 
@@ -66,5 +68,29 @@ authRouter.post("/logout", async (req, res) => {
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ message: "서버 오류로 로그아웃에 실패했습니다." });
+  }
+});
+
+authRouter.get("/me", async (req, res) => {
+  try {
+    const sessionId = req.cookies?.["session_id"];
+    const session = await getSession(sessionId);
+
+    if (!session) {
+      res.status(401).json({ message: "로그인이 필요합니다." });
+      return;
+    }
+
+    const user = await findUserById(session.userId);
+    if (!user) {
+      res.status(401).json({ message: "사용자를 찾을 수 없습니다." });
+      return;
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "서버 오류로 사용자 정보 조회에 실패했습니다." });
   }
 });

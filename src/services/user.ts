@@ -57,6 +57,15 @@ export async function findUserByUsername(
   return rows[0] ? toUser(rows[0]) : undefined;
 }
 
+export async function findUserById(id: string): Promise<User | undefined> {
+  const { rows } = await pool.query(
+    `SELECT id, name, nickname, username FROM users WHERE id = $1`,
+    [id],
+  );
+
+  return rows[0] ? rows[0] : undefined;
+}
+
 export async function createUser(input: {
   name: string;
   nickname: string;
